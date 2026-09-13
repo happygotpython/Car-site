@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | DRIVE-NATION GLOBALHub</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+    <!-- ADMIN HEADER -->
+    <header class="admin-header">
+        <div class="logo">
+            DRIVE-NATION <span>GLOBAL ADMIN</span>
+        </div>
+        <div class="nav-tools">
+            <a href="/" target="_blank" class="btn-secondary small">View Public Site</a>
+            <a href="/logout" class="btn-danger small">Logout</a>
+        </div>
+    </header>
+
+    <main class="admin-container">
+        <!-- TOP CONTROLS -->
+        <div class="admin-top-bar">
+            <h2>Inventory Management</h2>
+            <button class="btn-primary" onclick="openModal()">+ Add New Vehicle</button>
+        </div>
+
+        <!-- LISTINGS TABLE -->
+        <div class="table-container">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Image</th>
+                        <th>Title</th>
+                        <th>Listing Type</th>
+                        <th>Price / Rate</th>
+                        <th>Details</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="admin-vehicle-list">
+                    <!-- Dynamically populated -->
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <!-- ADD VEHICLE MODAL -->
+    <div class="modal-overlay" id="vehicle-modal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Add Vehicle Listing</h3>
+                <button class="close-modal-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <form id="add-vehicle-form" onsubmit="handleFormSubmit(event)" enctype="multipart/form-data">
+                
+                <!-- PICK BUYING OR RENTING -->
+                <div class="form-group">
+                    <label for="input-type">Listing Purpose *</label>
+                    <select id="input-type" onchange="toggleFormFields()" required>
+                        <option value="sale">Buying (For Sale)</option>
+                        <option value="rent">Renting (For Rent)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="input-title">Vehicle Name / Title *</label>
+                    <input type="text" id="input-title" placeholder="e.g. 2024 Ford F-150" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="input-image">Vehicle Photo (Upload from device) *</label>
+                    <input type="file" id="input-image" name="image" accept="image/*" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="input-specs">Specifications *</label>
+                    <input type="text" id="input-specs" placeholder="e.g. 4WD • Leather Seats" required>
+                </div>
+
+                <!-- FOR SALE FIELDS -->
+                <div id="fields-sale">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="input-make">Make</label>
+                            <input type="text" id="input-make" placeholder="Ford">
+                        </div>
+                        <div class="form-group">
+                            <label for="input-year">Year</label>
+                            <input type="number" id="input-year" placeholder="2023">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="input-price">Sale Price ($)</label>
+                            <input type="number" id="input-price" placeholder="45000">
+                        </div>
+                        <div class="form-group">
+                            <label for="input-mileage">Mileage (mi)</label>
+                            <input type="number" id="input-mileage" placeholder="15000">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FOR RENT FIELDS -->
+                <div id="fields-rent" class="hidden">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="input-category">Category</label>
+                            <select id="input-category">
+                                <option value="SUV">SUV</option>
+                                <option value="Sedan">Sedan</option>
+                                <option value="Luxury">Luxury</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="input-daily">Daily Rate ($/day)</label>
+                            <input type="number" id="input-daily" placeholder="120">
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="submit-btn">Publish to Website</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", fetchAdminVehicles);
+
+        async function fetchAdminVehicles() {
+            try {
+                const res = await fetch('/api/cars');
+                const cars = await res.json();
+                const tbody = document.getElementById("admin-vehicle-list");
+                tbody.innerHTML = "";
+
+                cars.forEach(car => {
+                    const isSale = car.type === 'sale';
+                    const priceText = isSale ? `$${car.price ? car.price.toLocaleString() : '0'}` : `$${car.dailyPrice}/day`;
+                    const typeBadge = isSale ? '<span class="badge sale">For Sale</span>' : '<span class="badge rent">For Rent</span>';
+                    const details = isSale ? `${car.year || ''} • ${car.mileage ? car.mileage.toLocaleString() + ' mi' : ''}` : `${car.category || 'Rental'}`;
+
+                    tbody.innerHTML += `
+                        <tr>
+                            <td><img src="${car.image}" class="table-img" alt=""></td>
+                            <td><strong>${car.title}</strong></td>
+                            <td>${typeBadge}</td>
+                            <td>${priceText}</td>
+                            <td>${details}</td>
+                            <td>
+                                <button class="btn-delete" onclick="deleteVehicle(${car.id})">Delete</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            } catch (err) {
+                console.error("Failed to fetch vehicles:", err);
+            }
+        }
+
+        function openModal() { document.getElementById("vehicle-modal").classList.add("active"); }
+        function closeModal() { document.getElementById("vehicle-modal").classList.remove("active"); }
+
+        function toggleFormFields() {
+            const type = document.getElementById("input-type").value;
+            document.getElementById("fields-sale").classList.toggle("hidden", type !== 'sale');
+            document.getElementById("fields-rent").classList.toggle("hidden", type !== 'rent');
+        }
+
+        async function handleFormSubmit(e) {
+            e.preventDefault();
+            const type = document.getElementById("input-type").value;
+            const formData = new FormData();
+
+            formData.append("type", type);
+            formData.append("title", document.getElementById("input-title").value);
+            formData.append("specs", document.getElementById("input-specs").value);
+
+            const imageInput = document.getElementById("input-image");
+            if (imageInput && imageInput.files && imageInput.files[0]) {
+                formData.append("image", imageInput.files[0]);
+            }
+
+            if (type === 'sale') {
+                formData.append("make", document.getElementById("input-make").value || 'Other');
+                formData.append("year", document.getElementById("input-year").value || '2024');
+                formData.append("price", document.getElementById("input-price").value || '0');
+                formData.append("mileage", document.getElementById("input-mileage").value || '0');
+            } else {
+                formData.append("category", document.getElementById("input-category").value);
+                formData.append("dailyPrice", document.getElementById("input-daily").value || '0');
+            }
+
+            try {
+                const res = await fetch('/api/cars', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (res.ok) {
+                    closeModal();
+                    document.getElementById("add-vehicle-form").reset();
+                    fetchAdminVehicles();
+                } else {
+                    alert("Failed to save vehicle.");
+                }
+            } catch (err) {
+                console.error("Error saving vehicle:", err);
+                alert("Failed to save vehicle.");
+            }
+        }
+
+        async function deleteVehicle(id) {
+            if (!confirm("Are you sure you want to delete this listing?")) return;
+            
+            try {
+                const res = await fetch(`/api/cars/${id}`, { method: 'DELETE' });
+                if (res.ok) {
+                    fetchAdminVehicles();
+                } else {
+                    alert("Failed to delete vehicle.");
+                }
+            } catch (err) {
+                console.error("Error deleting vehicle:", err);
+                alert("Failed to delete vehicle.");
+            }
+        }
+    </script>
+</body>
+</html>

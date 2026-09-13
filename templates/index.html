@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DRIVE-NATION GLOBAL | Your Trusted Luxurious and Affordable Cars</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+    <header>
+        <a href="#home" class="logo">
+            <svg class="brand-logo-icon" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.85 7h10.29l1.04 3H5.81l1.04-3zM19 17H5v-4h14v4z"/>
+            </svg>
+            DRIVE-NATION<span>GLOBAL</span>
+        </a>
+
+        <nav class="nav-links">
+            <a href="#home">Home</a>
+            <a href="#inventory" onclick="switchInventoryTab('sale')">For Sale</a>
+            <a href="#inventory" onclick="switchInventoryTab('rent')">For Rent</a>
+            <a href="#about">About</a>
+            <a href="#faq">FAQ</a>
+            <a href="#contact">Contact</a>
+        </nav>
+
+        <div class="nav-tools">
+            <a href="https://wa.me/12272670270" target="_blank" rel="noopener noreferrer" class="nav-icon-btn whatsapp-btn" title="Chat on WhatsApp">
+                <svg viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/>
+                </svg>
+            </a>
+
+            <button class="nav-icon-btn wishlist-btn" id="wishlist-btn" onclick="openWishlistModal()" title="View Wishlist" aria-label="View Wishlist">
+                <svg viewBox="0 0 24 24" width="22" height="22">
+                    <path fill="currentColor" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                </svg>
+                <span class="wishlist-badge" id="wishlist-badge">0</span>
+            </button>
+
+            <button class="theme-toggle" id="theme-btn" onclick="toggleTheme()" aria-label="Toggle Theme">
+                <svg id="theme-icon" viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-2.98 0-5.4-2.42-5.4-5.4 0-1.81.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z"/>
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero" id="home">
+            <span class="hero-tagline">Your Trusted Luxurious and Affordable Cars</span>
+            <h1>Find Your Perfect Car<br>In DRIVE-NATION GLOBAL</h1>
+            <p>Quality Cars For Sale. Flexible Rentals For Any Trip.</p>
+            
+            <div class="hero-actions">
+                <a href="#inventory" class="btn-primary" onclick="switchInventoryTab('sale')">Browse Cars For Sale</a>
+                <a href="#inventory" class="btn-secondary" onclick="switchInventoryTab('rent')">Rent A Car Today</a>
+            </div>
+
+            <div class="trust-bar">
+                <div class="trust-item">
+                    <svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+                    <span>Licensed Dealership in MI</span>
+                </div>
+                <div class="trust-item">
+                    <svg viewBox="0 0 24 24"><path fill="currentColor" d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99z"/></svg>
+                    <span>Free Test Drive</span>
+                </div>
+                <div class="trust-item">
+                    <svg viewBox="0 0 24 24"><path fill="currentColor" d="M21.71 20.29l-1.42 1.42a1 1 0 01-1.41 0L7 9.85A3.99 3.99 0 016 10c-2.21 0-4-1.79-4-4 0-.57.12-1.11.34-1.61l2.85 2.85 1.41-1.41L3.75 3.01C4.25 2.78 4.79 2.67 5.36 2.67c2.21 0 4 1.79 4 4 0 .35-.05.69-.14 1.01l11.86 11.86a1 1 0 010 1.42z"/></svg>
+                    <span>24/7 Roadside Rentals</span>
+                </div>
+                <div class="trust-item">
+                    <svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                    <span>5-Star Rated Reviews</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="inventory-section" id="inventory">
+            <div class="inventory-header">
+                <h2>Explore Vehicle Inventory</h2>
+                <div class="tab-container">
+                    <button class="tab-btn active" id="tab-sale-btn" onclick="switchInventoryTab('sale')">Cars For Sale</button>
+                    <button class="tab-btn" id="tab-rent-btn" onclick="switchInventoryTab('rent')">Cars For Rent</button>
+                </div>
+            </div>
+
+            <div class="search-container">
+                <input 
+                    type="text" 
+                    id="search-input" 
+                    placeholder="Search by vehicle name, make, specs, year..." 
+                    oninput="renderInventory()" 
+                    autocomplete="off"
+                >
+            </div>
+
+            <div class="filter-bar" id="filters-sale">
+                <div class="filter-group">
+                    <label>Make</label>
+                    <select id="filter-make" onchange="filterInventory()">
+                        <option value="all">All Makes</option>
+                        <option value="Ford">Ford</option>
+                        <option value="Chevrolet">Chevrolet</option>
+                        <option value="Toyota">Toyota</option>
+                        <option value="BMW">BMW</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="filter-bar hidden" id="filters-rent">
+                <div class="filter-group">
+                    <label>Vehicle Body</label>
+                    <select id="filter-category" onchange="filterInventory()">
+                        <option value="all">All Categories</option>
+                        <option value="SUV">SUV</option>
+                        <option value="Sedan">Sedan</option>
+                        <option value="Luxury">Luxury</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Rate Type</label>
+                    <select id="filter-rate-type" onchange="filterInventory()">
+                        <option value="all">Daily & Weekly</option>
+                        <option value="daily">Daily Rate</option>
+                        <option value="weekly">Weekly Rate</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid" id="car-grid"></div>
+        </section>
+
+        <section class="about-section" id="about">
+            <div class="about-container">
+                <div class="about-text">
+                    <h2>About DRIVE-NATION GLOBAL</h2>
+                    <p class="lead">Based in the heart of Michigan, USA, we provide high-quality vehicles for sale alongside flexible rental solutions tailored to your schedule.</p>
+                    <p>Our mission is simple: <strong>Reliable cars, fair prices, and exceptional customer service.</strong> Whether you need a daily commuter, a family SUV for a road trip across the Great Lakes, or luxury financing, our team is dedicated to getting you on the road smoothly.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="faq-section" id="faq">
+            <div class="faq-container">
+                <h2>Frequently Asked Questions</h2>
+                <div class="accordion">
+                    <div class="accordion-item">
+                        <button class="accordion-header" onclick="toggleFaq(this)">
+                            How does financing work for cars for sale?
+                            <span class="icon">
+                                <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                            </span>
+                        </button>
+                        <div class="accordion-content">
+                            <p>We work with trusted lenders across Michigan to offer flexible financing rates. You can pre-qualify by reaching out directly to our team via WhatsApp or Email.</p>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item">
+                        <button class="accordion-header" onclick="toggleFaq(this)">
+                            What are the requirements for renting a car?
+                            <span class="icon">
+                                <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                            </span>
+                        </button>
+                        <div class="accordion-content">
+                            <p>Rental drivers must be at least 21 years old with a valid driver's license, proof of insurance, and a major credit card. International drivers with valid passports are also welcome.</p>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item">
+                        <button class="accordion-header" onclick="toggleFaq(this)">
+                            Do you offer vehicle delivery in Michigan?
+                            <span class="icon">
+                                <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                            </span>
+                        </button>
+                        <div class="accordion-content">
+                            <p>Yes! We offer convenient local vehicle delivery for rentals and purchased vehicles across selected cities in Michigan. Contact us on WhatsApp for rate details.</p>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item">
+                        <button class="accordion-header" onclick="toggleFaq(this)">
+                            What is your test drive policy?
+                            <span class="icon">
+                                <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                            </span>
+                        </button>
+                        <div class="accordion-content">
+                            <p>Test drives are 100% free! Simply bring a valid driver's license to our Michigan location or schedule an appointment in advance over WhatsApp.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="contact-section" id="contact">
+            <div class="contact-container">
+                <h2>Contact Us</h2>
+                <p style="color: var(--text-muted); margin-bottom: 2rem;">Reach out directly for sales inquiries, test drives, or rental bookings.</p>
+
+                <div class="contact-layout">
+                    <div class="contact-info-box">
+                        <div class="info-row">
+                            <div class="info-icon">
+                                <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                            </div>
+                            <div>
+                                <strong>Address</strong>
+                                <p>Michigan, USA</p>
+                            </div>
+                        </div>
+
+                        <div class="info-row">
+                            <div class="info-icon">
+                                <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+                            </div>
+                            <div>
+                                <strong>Business Hours</strong>
+                                <p>Mon - Sat: 9:00 AM - 6:00 PM<br>Sunday: Closed</p>
+                            </div>
+                        </div>
+
+                        <div class="contact-buttons-grid">
+                            <a href="https://wa.me/12272670270" target="_blank" rel="noopener noreferrer" class="contact-card whatsapp-card">
+                                <div class="contact-icon whatsapp-icon-bg">
+                                    <svg viewBox="0 0 24 24"><path fill="currentColor" d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
+                                </div>
+                                <div class="contact-info">
+                                    <span class="contact-label">WhatsApp Support</span>
+                                    <span class="contact-value">Chat With Us on WhatsApp</span>
+                                </div>
+                            </a>
+
+                            <a href="mailto:drivenation31@gmail.com" class="contact-card email-card">
+                                <div class="contact-icon email-icon-bg">
+                                    <svg viewBox="0 0 24 24"><path fill="currentColor" d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+                                </div>
+                                <div class="contact-info">
+                                    <span class="contact-label">Send Email</span>
+                                    <span class="contact-value">drivenation31@gmail.com</span>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="map-container">
+                        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1478225.8458789808!2d-85.74837508759556!3d43.60155092102146!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8824ca0110cb1d75%3A0x5776864e35b9c4d2!2sMichigan%2C%20USA!5e0!3m2!1sen!2s!4v1710000000000!5m2!1sen!2s" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div>&copy; 2026 DRIVE-NATION GLOBAL. ALL RIGHTS RESERVED.</div>
+        <div>MICHIGAN, USA &bull; PRIVACY &amp; TERMS</div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='main.js') }}"></script>
+
+    <div id="compare-bar" class="compare-bar hidden">
+        <div class="compare-bar-info">
+            <span>Selected for comparison: <strong id="compare-count">0</strong>/3</span>
+        </div>
+        <div class="compare-bar-actions">
+            <button type="button" class="btn-compare-open" onclick="openCompareModal()">Compare Now</button>
+            <button type="button" class="btn-compare-clear" onclick="clearCompareList()">Clear</button>
+        </div>
+    </div>
+
+    <div id="compare-modal" class="compare-modal-overlay">
+        <div class="compare-modal-container">
+            <div class="compare-modal-header">
+                <h2>Vehicle Comparison</h2>
+                <button class="compare-modal-close" onclick="closeCompareModal()">&times;</button>
+            </div>
+            <div class="compare-modal-body" id="compare-modal-body">
+            </div>
+        </div>
+    </div>
+
+    <div id="wishlist-modal" class="compare-modal-overlay">
+        <div class="compare-modal-container">
+            <div class="compare-modal-header">
+                <h2>Saved Wishlist</h2>
+                <button class="compare-modal-close" onclick="closeWishlistModal()">&times;</button>
+            </div>
+            <div class="compare-modal-body" id="wishlist-modal-body">
+            </div>
+        </div>
+    </div>
+</body>
+</html>
