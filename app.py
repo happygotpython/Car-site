@@ -29,15 +29,15 @@ ADMIN_PASSWORD_HASH = generate_password_hash(
 
 # Cloudinary Configuration
 cloudinary.config(
-    cloud_name=os.environ.get('CLOUDINARY_CLOUD_NAME'),
-    api_key=os.environ.get('CLOUDINARY_API_KEY'),
-    api_secret=os.environ.get('CLOUDINARY_API_SECRET'),
+    cloud_name=os.environ.get('eiuyx9e4'),
+    api_key=os.environ.get('581917841499724'),
+    api_secret=os.environ.get('PBC0_k797cWmTFvIuCvBBaZIyQ0'),
     secure=True,
 )
 
 CARS_FILE = os.path.join(BASE_DIR, 'cars.json')
 
-# Restrict maximum upload size to 10 MB
+
 app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024
 
 
