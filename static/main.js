@@ -129,10 +129,12 @@ function setupEventListeners() {
     const searchInput = document.getElementById("search-input");
     const makeFilter = document.getElementById("filter-make");
     const catFilter = document.getElementById("filter-category");
+    const addVehicleForm = document.getElementById("add-vehicle-form");
 
     if (searchInput) searchInput.addEventListener("input", filterInventory);
     if (makeFilter) makeFilter.addEventListener("change", filterInventory);
     if (catFilter) catFilter.addEventListener("change", filterInventory);
+    if (addVehicleForm) addVehicleForm.addEventListener("submit", handleFormSubmit);
 }
 
 async function fetchVehicles() {
@@ -363,6 +365,11 @@ async function handleFormSubmit(e) {
     e.preventDefault();
     const typeInput = document.getElementById("input-type");
     if (!typeInput) return;
+
+    const form = e.target;
+    const submitBtn = form.querySelector('button[type="submit"]') || document.querySelector('#add-vehicle-form button[type="submit"]');
+    const originalBtnText = submitBtn ? submitBtn.innerText : 'Publish Vehicle';
+
     const type = typeInput.value;
     const formData = new FormData();
 
@@ -387,6 +394,12 @@ async function handleFormSubmit(e) {
         formData.append("dailyPrice", document.getElementById("input-daily")?.value || '0');
     }
 
+    // Disable button and give immediate feedback to avoid double submissions
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerText = "Uploading...";
+    }
+
     try {
         const response = await fetch('/api/cars', {
             method: 'POST',
@@ -396,7 +409,6 @@ async function handleFormSubmit(e) {
         if (response.ok) {
             alert("Vehicle published successfully!");
             closeAdminModal();
-            const form = document.getElementById("add-vehicle-form");
             if (form) form.reset();
             if (typeof fetchVehicles === 'function') fetchVehicles();
             if (typeof fetchAdminVehicles === 'function') fetchAdminVehicles();
@@ -406,6 +418,12 @@ async function handleFormSubmit(e) {
     } catch (err) {
         console.error("Error saving vehicle:", err);
         alert("Failed to save vehicle.");
+    } finally {
+        // Restore button state
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerText = originalBtnText;
+        }
     }
 }
 
