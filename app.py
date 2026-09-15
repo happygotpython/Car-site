@@ -27,16 +27,13 @@ ADMIN_PASSWORD_HASH = generate_password_hash(
     os.environ.get('ADMIN_PASSWORD', 'admin2026')
 )
 
-# Cloudinary Configuration
+# Cloudinary Configuration using CLOUDINARY_URL
 cloudinary.config(
-    cloud_name=os.environ.get('eiuyx9e4'),
-    api_key=os.environ.get('581917841499724'),
-    api_secret=os.environ.get('PBC0_k797cWmTFvIuCvBBaZIyQ0'),
-    secure=True,
+    cloudinary_url=os.environ.get('cloudinary://<your_api_key>:<your_api_secret>@eiuyx9e4'),
+    secure=True
 )
 
 CARS_FILE = os.path.join(BASE_DIR, 'cars.json')
-
 
 app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024
 
