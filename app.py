@@ -74,7 +74,6 @@ def save_cars(cars):
     json.dump(cars, f, indent=2)
   os.replace(temp_file, CARS_FILE)
 
-
 @app.route('/')
 def index():
   return render_template('index.html')
