@@ -11,6 +11,7 @@ from flask import (
     session,
     url_for,
 )
+from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import check_password_hash, generate_password_hash
 
 app = Flask(__name__)
@@ -29,13 +30,64 @@ ADMIN_PASSWORD_HASH = generate_password_hash(
 
 # Cloudinary Configuration using CLOUDINARY_URL
 cloudinary.config(
-    cloudinary_url=os.environ.get('cloudinary://<your_api_key>:<your_api_secret>@eiuyx9e4'),
+    cloudinary_url=os.environ.get('CLOUDINARY_URL'),
     secure=True
 )
 
-CARS_FILE = os.path.join(BASE_DIR, 'cars.json')
+# PostgreSQL / SQLAlchemy Configuration
+db_url = os.environ.get('DATABASE_URL', f"sqlite:///{os.path.join(BASE_DIR, 'cars.db')}")
+if db_url and db_url.startswith("postgres://"):
+    db_url = db_url.replace("postgres://", "postgresql://", 1)
 
+app.config['SQLALCHEMY_DATABASE_URI'] = db_url
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024
+
+db = SQLAlchemy(app)
+
+# Database Model
+class Car(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    type = db.Column(db.String(20), default='sale')
+    title = db.Column(db.String(100), nullable=False)
+    specs = db.Column(db.String(200))
+    image = db.Column(db.String(500))
+    fuelType = db.Column(db.String(50), default='Gasoline')
+    drivetrain = db.Column(db.String(50), default='AWD')
+    make = db.Column(db.String(50))
+    year = db.Column(db.Integer)
+    price = db.Column(db.Integer)
+    mileage = db.Column(db.Integer)
+    category = db.Column(db.String(50))
+    dailyPrice = db.Column(db.Integer)
+
+    def to_dict(self):
+        data = {
+            'id': self.id,
+            'type': self.type,
+            'title': self.title,
+            'specs': self.specs,
+            'image': self.image,
+            'fuelType': self.fuelType,
+            'drivetrain': self.drivetrain,
+        }
+        if self.type == 'sale':
+            data.update({
+                'make': self.make or 'Other',
+                'year': self.year or 2024,
+                'price': self.price or 0,
+                'mileage': self.mileage or 0,
+            })
+        else:
+            data.update({
+                'category': self.category or 'Rental',
+                'dailyPrice': self.dailyPrice or 0,
+            })
+        return data
+
+# Automatically initialize table structure
+with app.app_context():
+    db.create_all()
 
 
 @app.errorhandler(413)
@@ -57,22 +109,6 @@ def parse_int(val, default=0):
   except (ValueError, TypeError):
     return default
 
-
-def load_cars():
-  if not os.path.exists(CARS_FILE):
-    return []
-  try:
-    with open(CARS_FILE, 'r', encoding='utf-8') as f:
-      return json.load(f)
-  except (json.JSONDecodeError, OSError):
-    return []
-
-
-def save_cars(cars):
-  temp_file = f'{CARS_FILE}.tmp'
-  with open(temp_file, 'w', encoding='utf-8') as f:
-    json.dump(cars, f, indent=2)
-  os.replace(temp_file, CARS_FILE)
 
 @app.route('/')
 def index():
@@ -108,16 +144,14 @@ def logout():
 
 @app.route('/api/cars', methods=['GET'])
 def get_cars():
-  return jsonify(load_cars())
+  cars = Car.query.all()
+  return jsonify([car.to_dict() for car in cars])
 
 
 @app.route('/api/cars', methods=['POST'])
 def add_car():
   if not session.get('admin_logged_in'):
     return jsonify({'success': False, 'message': 'Unauthorized'}), 401
-
-  cars = load_cars()
-  new_id = max([c.get('id', 0) for c in cars], default=0) + 1
 
   # Direct upload to Cloudinary CDN
   image_path = '/static/placeholder.jpg'
@@ -141,32 +175,28 @@ def add_car():
 
   car_type = request.form.get('type', 'sale').strip()
 
-  car = {
-      'id': new_id,
-      'type': car_type,
-      'title': request.form.get('title', '').strip(),
-      'specs': request.form.get('specs', '').strip(),
-      'image': image_path,
-      'fuelType': request.form.get('fuelType', 'Gasoline').strip(),
-      'drivetrain': request.form.get('drivetrain', 'AWD').strip(),
-  }
+  new_car = Car(
+      type=car_type,
+      title=request.form.get('title', '').strip(),
+      specs=request.form.get('specs', '').strip(),
+      image=image_path,
+      fuelType=request.form.get('fuelType', 'Gasoline').strip(),
+      drivetrain=request.form.get('drivetrain', 'AWD').strip(),
+  )
 
   if car_type == 'sale':
-    car.update({
-        'make': request.form.get('make', 'Other').strip(),
-        'year': parse_int(request.form.get('year'), 2024),
-        'price': parse_int(request.form.get('price'), 0),
-        'mileage': parse_int(request.form.get('mileage'), 0),
-    })
+    new_car.make = request.form.get('make', 'Other').strip()
+    new_car.year = parse_int(request.form.get('year'), 2024)
+    new_car.price = parse_int(request.form.get('price'), 0)
+    new_car.mileage = parse_int(request.form.get('mileage'), 0)
   else:
-    car.update({
-        'category': request.form.get('category', 'Rental').strip(),
-        'dailyPrice': parse_int(request.form.get('dailyPrice'), 0),
-    })
+    new_car.category = request.form.get('category', 'Rental').strip()
+    new_car.dailyPrice = parse_int(request.form.get('dailyPrice'), 0)
 
-  cars.append(car)
-  save_cars(cars)
-  return jsonify({'success': True, 'car': car})
+  db.session.add(new_car)
+  db.session.commit()
+
+  return jsonify({'success': True, 'car': new_car.to_dict()})
 
 
 @app.route('/api/cars/<int:car_id>', methods=['DELETE'])
@@ -174,13 +204,12 @@ def delete_car(car_id):
   if not session.get('admin_logged_in'):
     return jsonify({'success': False, 'message': 'Unauthorized'}), 401
 
-  cars = load_cars()
-  filtered_cars = [c for c in cars if c.get('id') != car_id]
-
-  if len(filtered_cars) == len(cars):
+  car = Car.query.get(car_id)
+  if not car:
     return jsonify({'success': False, 'message': 'Vehicle not found'}), 404
 
-  save_cars(filtered_cars)
+  db.session.delete(car)
+  db.session.commit()
   return jsonify({'success': True, 'message': 'Vehicle deleted'})
 
 
