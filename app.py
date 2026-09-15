@@ -20,11 +20,11 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # Security & App Config
 app.secret_key = os.environ.get(
-    'SECRET_KEY', 'default-dev-secret-change-in-production'
+    'SECRET_KEY', 'happy_got_a_glock'
 )
 ADMIN_USERNAME = os.environ.get('ADMIN_USERNAME', 'admin')
 ADMIN_PASSWORD_HASH = generate_password_hash(
-    os.environ.get('ADMIN_PASSWORD', 'admin123')
+    os.environ.get('ADMIN_PASSWORD', 'admin2026')
 )
 
 # Cloudinary Configuration
