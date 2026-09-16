@@ -303,7 +303,19 @@
                 <button class="compare-modal-close" onclick="closeDetailsModal()">&times;</button>
             </div>
             <div class="compare-modal-body" id="details-modal-body">
-                <!-- Gallery & Vehicle details populated dynamically via main.js -->
+                <div class="gallery-layout" style="display: flex; flex-direction: column; gap: 1rem;">
+                    <!-- Main Image Preview -->
+                    <div class="main-image-wrapper" style="width: 100%; border-radius: 8px; overflow: hidden; background: #000;">
+                        <img id="modal-main-image" src="" alt="Vehicle Image" style="width: 100%; max-height: 420px; object-fit: cover; display: block;">
+                    </div>
+                    <!-- Thumbnails Strip -->
+                    <div id="modal-thumbnails" class="thumbnail-strip" style="display: flex; gap: 10px; overflow-x: auto; padding: 4px 0;">
+                        <!-- Dynamic thumbnail buttons injected by main.js -->
+                    </div>
+                </div>
+                <div id="modal-vehicle-info" class="modal-info-content" style="margin-top: 1.5rem;">
+                    <!-- Specs and details rendered by main.js -->
+                </div>
             </div>
         </div>
     </div>
