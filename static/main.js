@@ -359,8 +359,6 @@ function renderInventory() {
                         </div>
                         <div style="display: flex; gap: 0.4rem; align-items: center;">
                             <a href="https://wa.me/12272670270?text=${encodedMsg}" target="_blank" class="card-btn">Inquire</a>
-                            <button type="button" onclick="editVehicle(${car.id})" class="card-btn" style="background: var(--border);" title="Edit Vehicle">✏️</button>
-                            <button type="button" onclick="deleteVehicle(${car.id})" class="card-btn" style="background: #e63946; color: white;" title="Delete Vehicle">🗑️</button>
                         </div>
                     </div>
                 </div>
@@ -393,8 +391,6 @@ function renderInventory() {
                         </div>
                         <div style="display: flex; gap: 0.4rem; align-items: center;">
                             <a href="https://wa.me/12272670270?text=${encodedMsg}" target="_blank" class="card-btn">Book</a>
-                            <button type="button" onclick="editVehicle(${car.id})" class="card-btn" style="background: var(--border);" title="Edit Vehicle">✏️</button>
-                            <button type="button" onclick="deleteVehicle(${car.id})" class="card-btn" style="background: #e63946; color: white;" title="Delete Vehicle">🗑️</button>
                         </div>
                     </div>
                 </div>
@@ -602,6 +598,49 @@ function toggleFormFields() {
     if (fieldsRent) fieldsRent.classList.toggle("hidden", type !== 'rent');
 }
 
+// Client-side image compression utility to optimize speed
+function compressImage(file, maxWidth = 1600, quality = 0.8) {
+    return new Promise((resolve) => {
+        if (!file.type.match(/image.*/)) {
+            resolve(file);
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = () => {
+                let width = img.width;
+                let height = img.height;
+
+                if (width > maxWidth) {
+                    height = Math.round((height * maxWidth) / width);
+                    width = maxWidth;
+                }
+
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+
+                canvas.toBlob((blob) => {
+                    const compressedFile = new File([blob], file.name, {
+                        type: 'image/jpeg',
+                        lastModified: Date.now()
+                    });
+                    resolve(compressedFile);
+                }, 'image/jpeg', quality);
+            };
+            img.onerror = () => resolve(file);
+        };
+        reader.onerror = () => resolve(file);
+    });
+}
+
 async function handleFormSubmit(e) {
     e.preventDefault();
     const typeInput = document.getElementById("input-type");
@@ -619,20 +658,29 @@ async function handleFormSubmit(e) {
     formData.append("specs", document.getElementById("input-specs")?.value || "");
     formData.append("stock", document.getElementById("input-stock")?.value || "1");
 
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerText = editingCarId ? "Updating..." : "Publishing...";
+    }
+
     const multiImagesInput = document.getElementById("input-images");
     const singleImageInput = document.getElementById("input-image");
 
+    let rawFiles = [];
     if (selectedFiles.length > 0) {
-        selectedFiles.forEach(file => {
-            formData.append("images", file);
-        });
+        rawFiles = selectedFiles;
     } else if (multiImagesInput && multiImagesInput.files && multiImagesInput.files.length > 0) {
-        for (let i = 0; i < multiImagesInput.files.length; i++) {
-            formData.append("images", multiImagesInput.files[i]);
-        }
+        rawFiles = Array.from(multiImagesInput.files);
     } else if (singleImageInput && singleImageInput.files && singleImageInput.files[0]) {
-        formData.append("image", singleImageInput.files[0]);
+        rawFiles = [singleImageInput.files[0]];
     }
+
+    // Compress images before appending to avoid slow uploads
+    const compressedFiles = await Promise.all(rawFiles.map(file => compressImage(file)));
+
+    compressedFiles.forEach(file => {
+        formData.append("images", file);
+    });
 
     if (type === 'sale') {
         formData.append("make", document.getElementById("input-make")?.value || 'Other');
@@ -642,11 +690,6 @@ async function handleFormSubmit(e) {
     } else {
         formData.append("category", document.getElementById("input-category")?.value || 'Rental');
         formData.append("dailyPrice", document.getElementById("input-daily")?.value || '0');
-    }
-
-    if (submitBtn) {
-        submitBtn.disabled = true;
-        submitBtn.innerText = editingCarId ? "Updating..." : "Uploading...";
     }
 
     try {
