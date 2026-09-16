@@ -1,6 +1,8 @@
 let allVehicles = [];
 let activeTab = 'sale';
 let compareList = [];
+let selectedFiles = [];
+let editingCarId = null;
 
 document.addEventListener("DOMContentLoaded", () => {
     initTheme();
@@ -32,6 +34,40 @@ function toggleTheme() {
     localStorage.setItem("theme", newTheme);
 }
 
+// Popularity Metrics Helpers
+function getMetrics() {
+    try {
+        return JSON.parse(localStorage.getItem('drivenation_metrics')) || {};
+    } catch (e) {
+        return {};
+    }
+}
+
+function trackView(carId) {
+    if (!carId) return;
+    const metrics = getMetrics();
+    if (!metrics[carId]) metrics[carId] = { views: 0, wishlist: 0 };
+    metrics[carId].views += 1;
+    localStorage.setItem('drivenation_metrics', JSON.stringify(metrics));
+}
+
+function trackWishlistMetric(carId, added) {
+    if (!carId) return;
+    const metrics = getMetrics();
+    if (!metrics[carId]) metrics[carId] = { views: 0, wishlist: 0 };
+    metrics[carId].wishlist += added ? 1 : -1;
+    if (metrics[carId].wishlist < 0) metrics[carId].wishlist = 0;
+    localStorage.setItem('drivenation_metrics', JSON.stringify(metrics));
+}
+
+function getPopularityBadge(carId) {
+    const metrics = getMetrics()[carId] || { views: 0, wishlist: 0 };
+    if (metrics.views >= 5 || metrics.wishlist >= 2) {
+        return `<span class="badge hot-badge" style="background:#f39c12; color:#fff; position:absolute; top: 10px; left: 10px; z-index:2;">🔥 Popular</span>`;
+    }
+    return '';
+}
+
 // Wishlist Helpers
 function getWishlist() {
     try {
@@ -56,11 +92,17 @@ function updateWishlistBadge() {
 
 function toggleWishlist(carTitle) {
     let wishlist = getWishlist();
+    const isAdding = !wishlist.includes(carTitle);
+    
     if (wishlist.includes(carTitle)) {
         wishlist = wishlist.filter(title => title !== carTitle);
     } else {
         wishlist.push(carTitle);
     }
+
+    const targetCar = allVehicles.find(v => v.title === carTitle);
+    if (targetCar) trackWishlistMetric(targetCar.id, isAdding);
+
     saveWishlist(wishlist);
     renderInventory();
 
@@ -131,12 +173,52 @@ function setupEventListeners() {
     const searchInput = document.getElementById("search-input");
     const makeFilter = document.getElementById("filter-make");
     const catFilter = document.getElementById("filter-category");
+    const sortSelect = document.getElementById("sort-by");
     const addVehicleForm = document.getElementById("add-vehicle-form");
+    const multiImagesInput = document.getElementById("input-images");
 
     if (searchInput) searchInput.addEventListener("input", filterInventory);
     if (makeFilter) makeFilter.addEventListener("change", filterInventory);
     if (catFilter) catFilter.addEventListener("change", filterInventory);
+    if (sortSelect) sortSelect.addEventListener("change", filterInventory);
     if (addVehicleForm) addVehicleForm.addEventListener("submit", handleFormSubmit);
+
+    if (multiImagesInput) {
+        multiImagesInput.addEventListener("change", (e) => {
+            const files = Array.from(e.target.files);
+            selectedFiles = selectedFiles.concat(files);
+            renderPreviews();
+            e.target.value = "";
+        });
+    }
+}
+
+function renderPreviews() {
+    const container = document.getElementById("image-preview-container");
+    if (!container) return;
+    container.innerHTML = "";
+
+    selectedFiles.forEach((file, index) => {
+        const wrapper = document.createElement("div");
+        wrapper.style.cssText = "position: relative; width: 65px; height: 65px;";
+
+        const img = document.createElement("img");
+        img.src = URL.createObjectURL(file);
+        img.style.cssText = "width: 100%; height: 100%; object-fit: cover; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2);";
+
+        const removeBtn = document.createElement("button");
+        removeBtn.type = "button";
+        removeBtn.innerHTML = "&times;";
+        removeBtn.style.cssText = "position: absolute; top: -5px; right: -5px; background: #e63946; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px;";
+        removeBtn.onclick = () => {
+            selectedFiles.splice(index, 1);
+            renderPreviews();
+        };
+
+        wrapper.appendChild(img);
+        wrapper.appendChild(removeBtn);
+        container.appendChild(wrapper);
+    });
 }
 
 async function fetchVehicles() {
@@ -195,39 +277,59 @@ function renderInventory() {
     grid.innerHTML = "";
 
     const searchInput = document.getElementById("search-input");
+    const sortSelect = document.getElementById("sort-by");
     const searchQuery = searchInput ? searchInput.value.toLowerCase().trim() : "";
+    const sortOption = sortSelect ? sortSelect.value : "default";
     const wishlist = getWishlist();
 
-    if (activeTab === 'sale') {
-        const makeFilter = document.getElementById("filter-make") ? document.getElementById("filter-make").value : 'all';
-
-        const saleVehicles = allVehicles.filter(v => {
-            const isSale = v.type === 'sale';
+    let filteredVehicles = allVehicles.filter(v => {
+        if (activeTab === 'sale') {
+            const makeFilter = document.getElementById("filter-make") ? document.getElementById("filter-make").value : 'all';
             const matchesMake = makeFilter === 'all' || v.make === makeFilter;
-            
             const matchesSearch = !searchQuery || 
                 (v.title && v.title.toLowerCase().includes(searchQuery)) ||
                 (v.make && v.make.toLowerCase().includes(searchQuery)) ||
                 (v.specs && v.specs.toLowerCase().includes(searchQuery)) ||
                 (v.year && v.year.toString().includes(searchQuery));
-
-            return isSale && matchesMake && matchesSearch;
-        });
-
-        if (saleVehicles.length === 0) {
-            grid.innerHTML = `<p class="no-results">No vehicles found matching your search.</p>`;
-            return;
+            return v.type === 'sale' && matchesMake && matchesSearch;
+        } else {
+            const catFilter = document.getElementById("filter-category") ? document.getElementById("filter-category").value : 'all';
+            const matchesCategory = catFilter === 'all' || v.category === catFilter;
+            const matchesSearch = !searchQuery || 
+                (v.title && v.title.toLowerCase().includes(searchQuery)) ||
+                (v.category && v.category.toLowerCase().includes(searchQuery)) ||
+                (v.specs && v.specs.toLowerCase().includes(searchQuery));
+            return v.type === 'rent' && matchesCategory && matchesSearch;
         }
+    });
 
-        saleVehicles.forEach(car => {
-            const isComparing = compareList.includes(car.title);
-            const isWishlisted = wishlist.includes(car.title);
-            const safeTitle = car.title ? car.title.replace(/\\/g, "\\\\").replace(/'/g, "\\'") : "";
+    // Dynamic Sorting Logic
+    filteredVehicles.sort((a, b) => {
+        const priceA = a.type === 'sale' ? (Number(a.price) || 0) : (Number(a.dailyPrice) || 0);
+        const priceB = b.type === 'sale' ? (Number(b.price) || 0) : (Number(b.dailyPrice) || 0);
+
+        if (sortOption === 'price-asc') return priceA - priceB;
+        if (sortOption === 'price-desc') return priceB - priceA;
+        if (sortOption === 'year-desc') return (Number(b.year) || 0) - (Number(a.year) || 0);
+        if (sortOption === 'mileage-asc') return (Number(a.mileage) || 0) - (Number(b.mileage) || 0);
+        return 0;
+    });
+
+    if (filteredVehicles.length === 0) {
+        grid.innerHTML = `<p class="no-results">No vehicles found matching your criteria.</p>`;
+        return;
+    }
+
+    filteredVehicles.forEach(car => {
+        const isComparing = compareList.includes(car.title);
+        const isWishlisted = wishlist.includes(car.title);
+        const safeTitle = car.title ? car.title.replace(/\\/g, "\\\\").replace(/'/g, "\\'") : "";
+        const images = Array.isArray(car.images) && car.images.length > 0 ? car.images : [car.image || '/static/placeholder.jpg'];
+        const imageSrc = escapeHTML(images[0]);
+        const popBadge = getPopularityBadge(car.id);
+
+        if (car.type === 'sale') {
             const encodedMsg = encodeURIComponent(`Hi, I want to buy the ${car.title || ''} ($${car.price ? Number(car.price).toLocaleString() : 'N/A'}) on DRIVE-NATION GLOBAL.`);
-            
-            const images = Array.isArray(car.images) && car.images.length > 0 ? car.images : [car.image || '/static/placeholder.jpg'];
-            const imageSrc = escapeHTML(images[0]);
-            
             const stockBadge = (car.stock !== undefined && car.stock <= 0)
                 ? `<span class="badge out-stock" style="background:#e63946; top: 10px; left: 10px;">Sold Out</span>`
                 : `<span class="badge">For Sale ${car.stock ? `(${car.stock})` : ''}</span>`;
@@ -235,7 +337,7 @@ function renderInventory() {
             grid.innerHTML += `
                 <div class="card" onclick="openDetailsModal(${car.id})">
                     <div class="card-image" style="background-image: url('${imageSrc}')">
-                        ${stockBadge}
+                        ${popBadge || stockBadge}
                         <button type="button" class="wishlist-toggle-btn ${isWishlisted ? 'active' : ''}" onclick="event.stopPropagation(); toggleWishlist('${escapeHTML(safeTitle)}');" title="${isWishlisted ? 'Remove from Wishlist' : 'Save to Wishlist'}" style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.6); border: none; border-radius: 50%; width: 34px; height: 34px; cursor: pointer; color: ${isWishlisted ? '#e63946' : '#fff'}; display: flex; align-items: center; justify-content: center; z-index: 2;">
                             <svg viewBox="0 0 24 24" width="18" height="18">
                                 <path fill="currentColor" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
@@ -255,44 +357,21 @@ function renderInventory() {
                             <span style="font-size: 0.7rem; color: var(--text-muted); display:block;">PRICE</span>
                             <span class="price-value">$${car.price ? Number(car.price).toLocaleString() : 'N/A'}</span>
                         </div>
-                        <a href="https://wa.me/12272670270?text=${encodedMsg}" target="_blank" class="card-btn">Inquire on WhatsApp</a>
+                        <div style="display: flex; gap: 0.4rem; align-items: center;">
+                            <a href="https://wa.me/12272670270?text=${encodedMsg}" target="_blank" class="card-btn">Inquire</a>
+                            <button type="button" onclick="editVehicle(${car.id})" class="card-btn" style="background: var(--border);" title="Edit Vehicle">✏️</button>
+                            <button type="button" onclick="deleteVehicle(${car.id})" class="card-btn" style="background: #e63946; color: white;" title="Delete Vehicle">🗑️</button>
+                        </div>
                     </div>
                 </div>
             `;
-        });
-    } else {
-        const catFilter = document.getElementById("filter-category") ? document.getElementById("filter-category").value : 'all';
-
-        const rentVehicles = allVehicles.filter(v => {
-            const isRent = v.type === 'rent';
-            const matchesCategory = catFilter === 'all' || v.category === catFilter;
-
-            const matchesSearch = !searchQuery || 
-                (v.title && v.title.toLowerCase().includes(searchQuery)) ||
-                (v.category && v.category.toLowerCase().includes(searchQuery)) ||
-                (v.specs && v.specs.toLowerCase().includes(searchQuery));
-
-            return isRent && matchesCategory && matchesSearch;
-        });
-
-        if (rentVehicles.length === 0) {
-            grid.innerHTML = `<p class="no-results">No rentals found matching your search.</p>`;
-            return;
-        }
-
-        rentVehicles.forEach(car => {
-            const isComparing = compareList.includes(car.title);
-            const isWishlisted = wishlist.includes(car.title);
-            const safeTitle = car.title ? car.title.replace(/\\/g, "\\\\").replace(/'/g, "\\'") : "";
+        } else {
             const encodedMsg = encodeURIComponent(`Hi, I want to rent the ${car.title || ''} ($${car.dailyPrice || 0}/day) on DRIVE-NATION GLOBAL.`);
-            
-            const images = Array.isArray(car.images) && car.images.length > 0 ? car.images : [car.image || '/static/placeholder.jpg'];
-            const imageSrc = escapeHTML(images[0]);
 
             grid.innerHTML += `
                 <div class="card" onclick="openDetailsModal(${car.id})">
                     <div class="card-image" style="background-image: url('${imageSrc}')">
-                        <span class="badge">For Rent</span>
+                        ${popBadge || `<span class="badge">For Rent</span>`}
                         <button type="button" class="wishlist-toggle-btn ${isWishlisted ? 'active' : ''}" onclick="event.stopPropagation(); toggleWishlist('${escapeHTML(safeTitle)}');" title="${isWishlisted ? 'Remove from Wishlist' : 'Save to Wishlist'}" style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.6); border: none; border-radius: 50%; width: 34px; height: 34px; cursor: pointer; color: ${isWishlisted ? '#e63946' : '#fff'}; display: flex; align-items: center; justify-content: center; z-index: 2;">
                             <svg viewBox="0 0 24 24" width="18" height="18">
                                 <path fill="currentColor" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
@@ -312,18 +391,23 @@ function renderInventory() {
                             <span style="font-size: 0.7rem; color: var(--text-muted); display:block;">RATE</span>
                             <span class="price-value">$${car.dailyPrice ? escapeHTML(car.dailyPrice) : '0'} <small style="font-size: 0.75rem;">/day</small></span>
                         </div>
-                        <a href="https://wa.me/12272670270?text=${encodedMsg}" target="_blank" class="card-btn">Book on WhatsApp</a>
+                        <div style="display: flex; gap: 0.4rem; align-items: center;">
+                            <a href="https://wa.me/12272670270?text=${encodedMsg}" target="_blank" class="card-btn">Book</a>
+                            <button type="button" onclick="editVehicle(${car.id})" class="card-btn" style="background: var(--border);" title="Edit Vehicle">✏️</button>
+                            <button type="button" onclick="deleteVehicle(${car.id})" class="card-btn" style="background: #e63946; color: white;" title="Delete Vehicle">🗑️</button>
+                        </div>
                     </div>
                 </div>
             `;
-        });
-    }
+        }
+    });
 }
 
-// Vehicle Details & Gallery Lightbox Modal
 function openDetailsModal(carId) {
     const car = allVehicles.find(v => v.id === carId || v.id == carId);
     if (!car) return;
+
+    trackView(car.id);
 
     const modal = document.getElementById("details-modal");
     const titleEl = document.getElementById("modal-car-title");
@@ -440,6 +524,7 @@ document.addEventListener("keydown", (e) => {
     }
 });
 
+// Admin CRUD Operations
 function openAdminModal() { 
     const modal = document.getElementById("admin-modal") || document.getElementById("vehicle-modal");
     if (modal) modal.classList.add("active"); 
@@ -448,6 +533,63 @@ function openAdminModal() {
 function closeAdminModal() { 
     const modal = document.getElementById("admin-modal") || document.getElementById("vehicle-modal");
     if (modal) modal.classList.remove("active"); 
+    editingCarId = null;
+    selectedFiles = [];
+    renderPreviews();
+
+    const form = document.getElementById("add-vehicle-form");
+    if (form) form.reset();
+
+    const submitBtn = form?.querySelector('button[type="submit"]');
+    if (submitBtn) submitBtn.innerText = 'Publish Vehicle';
+}
+
+function editVehicle(carId) {
+    const car = allVehicles.find(v => v.id == carId);
+    if (!car) return;
+
+    editingCarId = car.id;
+    openAdminModal();
+
+    const form = document.getElementById("add-vehicle-form");
+    if (document.getElementById("input-type")) document.getElementById("input-type").value = car.type || 'sale';
+    toggleFormFields();
+
+    if (document.getElementById("input-title")) document.getElementById("input-title").value = car.title || '';
+    if (document.getElementById("input-specs")) document.getElementById("input-specs").value = car.specs || '';
+    if (document.getElementById("input-stock")) document.getElementById("input-stock").value = car.stock ?? 1;
+
+    if (car.type === 'sale') {
+        if (document.getElementById("input-make")) document.getElementById("input-make").value = car.make || 'Other';
+        if (document.getElementById("input-year")) document.getElementById("input-year").value = car.year || '';
+        if (document.getElementById("input-price")) document.getElementById("input-price").value = car.price || '';
+        if (document.getElementById("input-mileage")) document.getElementById("input-mileage").value = car.mileage || '';
+    } else {
+        if (document.getElementById("input-category")) document.getElementById("input-category").value = car.category || '';
+        if (document.getElementById("input-daily")) document.getElementById("input-daily").value = car.dailyPrice || '';
+    }
+
+    const submitBtn = form?.querySelector('button[type="submit"]');
+    if (submitBtn) submitBtn.innerText = "Update Vehicle";
+}
+
+async function deleteVehicle(carId) {
+    if (!confirm("Are you sure you want to delete this vehicle listing?")) return;
+
+    try {
+        const response = await fetch(`/api/cars/${carId}`, { method: 'DELETE' });
+        if (response.ok) {
+            allVehicles = allVehicles.filter(v => v.id != carId);
+            renderInventory();
+            populateMakeDropdown();
+            alert("Vehicle deleted successfully!");
+        } else {
+            alert("Failed to delete vehicle.");
+        }
+    } catch (err) {
+        console.error("Error deleting vehicle:", err);
+        alert("Error deleting vehicle.");
+    }
 }
 
 function toggleFormFields() {
@@ -477,11 +619,14 @@ async function handleFormSubmit(e) {
     formData.append("specs", document.getElementById("input-specs")?.value || "");
     formData.append("stock", document.getElementById("input-stock")?.value || "1");
 
-    // Support both single input and multiple files input
     const multiImagesInput = document.getElementById("input-images");
     const singleImageInput = document.getElementById("input-image");
 
-    if (multiImagesInput && multiImagesInput.files && multiImagesInput.files.length > 0) {
+    if (selectedFiles.length > 0) {
+        selectedFiles.forEach(file => {
+            formData.append("images", file);
+        });
+    } else if (multiImagesInput && multiImagesInput.files && multiImagesInput.files.length > 0) {
         for (let i = 0; i < multiImagesInput.files.length; i++) {
             formData.append("images", multiImagesInput.files[i]);
         }
@@ -501,19 +646,21 @@ async function handleFormSubmit(e) {
 
     if (submitBtn) {
         submitBtn.disabled = true;
-        submitBtn.innerText = "Uploading...";
+        submitBtn.innerText = editingCarId ? "Updating..." : "Uploading...";
     }
 
     try {
-        const response = await fetch('/api/cars', {
-            method: 'POST',
+        const url = editingCarId ? `/api/cars/${editingCarId}` : '/api/cars';
+        const method = editingCarId ? 'PUT' : 'POST';
+
+        const response = await fetch(url, {
+            method: method,
             body: formData
         });
 
         if (response.ok) {
-            alert("Vehicle published successfully!");
+            alert(editingCarId ? "Vehicle updated successfully!" : "Vehicle published successfully!");
             closeAdminModal();
-            if (form) form.reset();
             if (typeof fetchVehicles === 'function') fetchVehicles();
             if (typeof fetchAdminVehicles === 'function') fetchAdminVehicles();
         } else {

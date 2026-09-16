@@ -68,8 +68,10 @@
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="input-images">Vehicle Photos (Upload multiple) *</label>
-                        <input type="file" id="input-images" name="images" accept="image/*" multiple required>
+                        <label for="input-images">Vehicle Photos (Select single or multiple) *</label>
+                        <input type="file" id="input-images" accept="image/*" multiple>
+                        <!-- Image Preview Strip -->
+                        <div id="image-preview-container" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px;"></div>
                     </div>
                     <div class="form-group">
                         <label for="input-stock">Stock Quantity *</label>
@@ -152,7 +154,50 @@
     </div>
 
     <script>
-        document.addEventListener("DOMContentLoaded", fetchAdminVehicles);
+        let selectedFiles = [];
+
+        document.addEventListener("DOMContentLoaded", () => {
+            fetchAdminVehicles();
+
+            // Accumulate selected files without replacing existing ones
+            const imageInput = document.getElementById("input-images");
+            if (imageInput) {
+                imageInput.addEventListener("change", (e) => {
+                    const files = Array.from(e.target.files);
+                    selectedFiles = selectedFiles.concat(files);
+                    renderPreviews();
+                    e.target.value = ""; // Clear picker state to allow picking more photos
+                });
+            }
+        });
+
+        function renderPreviews() {
+            const container = document.getElementById("image-preview-container");
+            if (!container) return;
+            container.innerHTML = "";
+
+            selectedFiles.forEach((file, index) => {
+                const wrapper = document.createElement("div");
+                wrapper.style.cssText = "position: relative; width: 65px; height: 65px;";
+
+                const img = document.createElement("img");
+                img.src = URL.createObjectURL(file);
+                img.style.cssText = "width: 100%; height: 100%; object-fit: cover; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2);";
+
+                const removeBtn = document.createElement("button");
+                removeBtn.type = "button";
+                removeBtn.innerHTML = "&times;";
+                removeBtn.style.cssText = "position: absolute; top: -5px; right: -5px; background: #e63946; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px;";
+                removeBtn.onclick = () => {
+                    selectedFiles.splice(index, 1);
+                    renderPreviews();
+                };
+
+                wrapper.appendChild(img);
+                wrapper.appendChild(removeBtn);
+                container.appendChild(wrapper);
+            });
+        }
 
         function escapeHTML(str) {
             if (!str) return '';
@@ -210,6 +255,8 @@
         function closeModal() { 
             document.getElementById("vehicle-modal").classList.remove("active"); 
             document.getElementById("add-vehicle-form").reset();
+            selectedFiles = [];
+            renderPreviews();
             toggleFormFields();
         }
 
@@ -221,6 +268,12 @@
 
         async function handleFormSubmit(e) {
             e.preventDefault();
+
+            if (selectedFiles.length === 0) {
+                alert("Please select at least one vehicle photo.");
+                return;
+            }
+
             const submitBtn = document.getElementById("submit-btn");
             const originalText = submitBtn.innerText;
             
@@ -234,12 +287,10 @@
             formData.append("fuelType", document.getElementById("input-fuel").value);
             formData.append("drivetrain", document.getElementById("input-drivetrain").value);
 
-            const imageInput = document.getElementById("input-images");
-            if (imageInput && imageInput.files.length > 0) {
-                for (let i = 0; i < imageInput.files.length; i++) {
-                    formData.append("images", imageInput.files[i]);
-                }
-            }
+            // Append all accumulated files
+            selectedFiles.forEach(file => {
+                formData.append("images", file);
+            });
 
             if (type === 'sale') {
                 formData.append("make", document.getElementById("input-make").value.trim() || 'Other');
