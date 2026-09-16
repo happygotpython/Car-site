@@ -251,6 +251,15 @@ def delete_car(car_id):
     db.session.commit()
     return jsonify({'success': True, 'message': 'Vehicle deleted'})
 
+@app.route('/admin/reset-db')
+def reset_db():
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('login'))
+    
+    db.drop_all()
+    db.create_all()
+    return "Database schema recreated successfully! <a href='/admin'>Return to Admin Panel</a>"
+
 
 if __name__ == '__main__':
     app.run(debug=True)
