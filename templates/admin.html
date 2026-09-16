@@ -3,12 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard | DRIVE-NATION GLOBALHub</title>
+    <title>Admin Dashboard | DRIVE-NATION GLOBAL</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
 
-    <!-- ADMIN HEADER -->
     <header class="admin-header">
         <div class="logo">
             DRIVE-NATION <span>GLOBAL ADMIN</span>
@@ -20,21 +19,20 @@
     </header>
 
     <main class="admin-container">
-        <!-- TOP CONTROLS -->
         <div class="admin-top-bar">
             <h2>Inventory Management</h2>
             <button class="btn-primary" onclick="openModal()">+ Add New Vehicle</button>
         </div>
 
-        <!-- LISTINGS TABLE -->
         <div class="table-container">
             <table class="admin-table">
                 <thead>
                     <tr>
                         <th>Image</th>
                         <th>Title</th>
-                        <th>Listing Type</th>
+                        <th>Type</th>
                         <th>Price / Rate</th>
+                        <th>Stock</th>
                         <th>Details</th>
                         <th>Action</th>
                     </tr>
@@ -55,7 +53,6 @@
             </div>
             <form id="add-vehicle-form" onsubmit="handleFormSubmit(event)" enctype="multipart/form-data">
                 
-                <!-- PICK BUYING OR RENTING -->
                 <div class="form-group">
                     <label for="input-type">Listing Purpose *</label>
                     <select id="input-type" onchange="toggleFormFields()" required>
@@ -69,14 +66,41 @@
                     <input type="text" id="input-title" placeholder="e.g. 2024 Ford F-150" required>
                 </div>
 
-                <div class="form-group">
-                    <label for="input-image">Vehicle Photo (Upload from device) *</label>
-                    <input type="file" id="input-image" name="image" accept="image/*" required>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="input-images">Vehicle Photos (Upload multiple) *</label>
+                        <input type="file" id="input-images" name="images" accept="image/*" multiple required>
+                    </div>
+                    <div class="form-group">
+                        <label for="input-stock">Stock Quantity *</label>
+                        <input type="number" id="input-stock" placeholder="1" min="0" value="1" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="input-fuel">Fuel Type</label>
+                        <select id="input-fuel">
+                            <option value="Gasoline">Gasoline</option>
+                            <option value="Hybrid">Hybrid</option>
+                            <option value="Electric">Electric</option>
+                            <option value="Diesel">Diesel</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="input-drivetrain">Drivetrain</label>
+                        <select id="input-drivetrain">
+                            <option value="AWD">AWD</option>
+                            <option value="4WD">4WD</option>
+                            <option value="FWD">FWD</option>
+                            <option value="RWD">RWD</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div class="form-group">
-                    <label for="input-specs">Specifications *</label>
-                    <input type="text" id="input-specs" placeholder="e.g. 4WD • Leather Seats" required>
+                    <label for="input-specs">Specifications & Features *</label>
+                    <input type="text" id="input-specs" placeholder="e.g. 4WD • Leather Seats • Navigation" required>
                 </div>
 
                 <!-- FOR SALE FIELDS -->
@@ -88,7 +112,7 @@
                         </div>
                         <div class="form-group">
                             <label for="input-year">Year</label>
-                            <input type="number" id="input-year" placeholder="2023">
+                            <input type="number" id="input-year" placeholder="2024">
                         </div>
                     </div>
                     <div class="form-row">
@@ -112,6 +136,7 @@
                                 <option value="SUV">SUV</option>
                                 <option value="Sedan">Sedan</option>
                                 <option value="Luxury">Luxury</option>
+                                <option value="Truck">Truck</option>
                             </select>
                         </div>
                         <div class="form-group">
@@ -121,7 +146,7 @@
                     </div>
                 </div>
 
-                <button type="submit" class="submit-btn">Publish to Website</button>
+                <button type="submit" id="submit-btn" class="submit-btn">Publish to Website</button>
             </form>
         </div>
     </div>
@@ -129,25 +154,46 @@
     <script>
         document.addEventListener("DOMContentLoaded", fetchAdminVehicles);
 
+        function escapeHTML(str) {
+            if (!str) return '';
+            return String(str).replace(/[&<>"']/g, match => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[match]));
+        }
+
         async function fetchAdminVehicles() {
             try {
-                const res = await fetch('/api/cars');
+                const res = await fetch(`/api/cars?t=${Date.now()}`);
                 const cars = await res.json();
                 const tbody = document.getElementById("admin-vehicle-list");
                 tbody.innerHTML = "";
 
                 cars.forEach(car => {
                     const isSale = car.type === 'sale';
-                    const priceText = isSale ? `$${car.price ? car.price.toLocaleString() : '0'}` : `$${car.dailyPrice}/day`;
-                    const typeBadge = isSale ? '<span class="badge sale">For Sale</span>' : '<span class="badge rent">For Rent</span>';
-                    const details = isSale ? `${car.year || ''} • ${car.mileage ? car.mileage.toLocaleString() + ' mi' : ''}` : `${car.category || 'Rental'}`;
+                    const priceText = isSale 
+                        ? `$${car.price ? Number(car.price).toLocaleString() : '0'}` 
+                        : `$${car.dailyPrice ? escapeHTML(car.dailyPrice) : '0'}/day`;
+                    
+                    const typeBadge = isSale 
+                        ? '<span class="badge sale">For Sale</span>' 
+                        : '<span class="badge rent">For Rent</span>';
+                    
+                    const details = isSale 
+                        ? `${car.year || ''} • ${car.mileage ? Number(car.mileage).toLocaleString() + ' mi' : '0 mi'}` 
+                        : `${escapeHTML(car.category || 'Rental')}`;
+                    
+                    const mainImage = Array.isArray(car.images) && car.images.length > 0 ? car.images[0] : (car.image || '/static/placeholder.jpg');
+                    const stockDisplay = car.stock > 0 
+                        ? `<strong>${car.stock}</strong>` 
+                        : `<span style="color:var(--danger,#e63946);">Out of stock</span>`;
 
                     tbody.innerHTML += `
                         <tr>
-                            <td><img src="${car.image}" class="table-img" alt=""></td>
-                            <td><strong>${car.title}</strong></td>
+                            <td><img src="${escapeHTML(mainImage)}" class="table-img" alt="${escapeHTML(car.title)}" style="width: 60px; height: 45px; object-fit: cover; border-radius: 4px;"></td>
+                            <td><strong>${escapeHTML(car.title)}</strong></td>
                             <td>${typeBadge}</td>
                             <td>${priceText}</td>
+                            <td>${stockDisplay}</td>
                             <td>${details}</td>
                             <td>
                                 <button class="btn-delete" onclick="deleteVehicle(${car.id})">Delete</button>
@@ -161,7 +207,11 @@
         }
 
         function openModal() { document.getElementById("vehicle-modal").classList.add("active"); }
-        function closeModal() { document.getElementById("vehicle-modal").classList.remove("active"); }
+        function closeModal() { 
+            document.getElementById("vehicle-modal").classList.remove("active"); 
+            document.getElementById("add-vehicle-form").reset();
+            toggleFormFields();
+        }
 
         function toggleFormFields() {
             const type = document.getElementById("input-type").value;
@@ -171,20 +221,28 @@
 
         async function handleFormSubmit(e) {
             e.preventDefault();
+            const submitBtn = document.getElementById("submit-btn");
+            const originalText = submitBtn.innerText;
+            
             const type = document.getElementById("input-type").value;
             const formData = new FormData();
 
             formData.append("type", type);
-            formData.append("title", document.getElementById("input-title").value);
-            formData.append("specs", document.getElementById("input-specs").value);
+            formData.append("title", document.getElementById("input-title").value.trim());
+            formData.append("specs", document.getElementById("input-specs").value.trim());
+            formData.append("stock", document.getElementById("input-stock").value || '1');
+            formData.append("fuelType", document.getElementById("input-fuel").value);
+            formData.append("drivetrain", document.getElementById("input-drivetrain").value);
 
-            const imageInput = document.getElementById("input-image");
-            if (imageInput && imageInput.files && imageInput.files[0]) {
-                formData.append("image", imageInput.files[0]);
+            const imageInput = document.getElementById("input-images");
+            if (imageInput && imageInput.files.length > 0) {
+                for (let i = 0; i < imageInput.files.length; i++) {
+                    formData.append("images", imageInput.files[i]);
+                }
             }
 
             if (type === 'sale') {
-                formData.append("make", document.getElementById("input-make").value || 'Other');
+                formData.append("make", document.getElementById("input-make").value.trim() || 'Other');
                 formData.append("year", document.getElementById("input-year").value || '2024');
                 formData.append("price", document.getElementById("input-price").value || '0');
                 formData.append("mileage", document.getElementById("input-mileage").value || '0');
@@ -194,6 +252,9 @@
             }
 
             try {
+                submitBtn.disabled = true;
+                submitBtn.innerText = "Uploading to Cloudinary...";
+
                 const res = await fetch('/api/cars', {
                     method: 'POST',
                     body: formData
@@ -201,14 +262,17 @@
 
                 if (res.ok) {
                     closeModal();
-                    document.getElementById("add-vehicle-form").reset();
                     fetchAdminVehicles();
                 } else {
-                    alert("Failed to save vehicle.");
+                    const data = await res.json();
+                    alert(data.message || "Failed to save vehicle.");
                 }
             } catch (err) {
                 console.error("Error saving vehicle:", err);
-                alert("Failed to save vehicle.");
+                alert("Failed to save vehicle. Check server connection.");
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerText = originalText;
             }
         }
 

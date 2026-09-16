@@ -1255,3 +1255,85 @@ footer {
     color: var(--accent);
     font-size: 1.05rem;
 }
+
+.badge.out-stock {
+    background-color: #e63946 !important;
+    color: #ffffff !important;
+}
+
+.badge.in-stock {
+    background-color: #2a9d8f !important;
+    color: #ffffff !important;
+}
+
+.details-modal-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+}
+
+@media (min-width: 768px) {
+    .details-modal-grid {
+        grid-template-columns: 1.2fr 1fr;
+    }
+}
+
+.details-gallery {
+    display: flex;
+    flex-direction: column;
+}
+
+#gallery-main-img {
+    width: 100%;
+    max-height: 350px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid var(--border, #333);
+    transition: transform 0.2s ease;
+}
+
+#gallery-main-img:hover {
+    transform: scale(1.01);
+}
+
+.gallery-thumbnails {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+    scroll-behavior: smooth;
+}
+
+.gallery-thumb {
+    width: 70px;
+    height: 50px;
+    object-fit: cover;
+    border-radius: 6px;
+    cursor: pointer;
+    border: 2px solid var(--border, #444);
+    opacity: 0.7;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.gallery-thumb:hover,
+.gallery-thumb.active {
+    opacity: 1;
+    border-color: var(--primary, #007bff);
+}
+
+.details-specs-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    padding: 0.75rem 0;
+    border-top: 1px solid var(--border, #333);
+    border-bottom: 1px solid var(--border, #333);
+    font-size: 0.9rem;
+}
+
+.admin-table th:nth-child(5),
+.admin-table td:nth-child(5) {
+    text-align: center;
+}

@@ -96,7 +96,8 @@ function renderWishlistModal() {
     let html = `<div class="wishlist-grid" style="display: flex; flex-direction: column; gap: 1rem;">`;
     savedVehicles.forEach(car => {
         const safeTitle = car.title ? car.title.replace(/\\/g, "\\\\").replace(/'/g, "\\'") : "";
-        const imageSrc = escapeHTML(car.image || '/static/placeholder.jpg');
+        const images = Array.isArray(car.images) && car.images.length > 0 ? car.images : [car.image || '/static/placeholder.jpg'];
+        const imageSrc = escapeHTML(images[0]);
         const priceDisplay = car.type === 'sale' 
             ? `$${car.price ? Number(car.price).toLocaleString() : 'N/A'}`
             : `$${car.dailyPrice ? escapeHTML(car.dailyPrice) : '0'}/day`;
@@ -113,6 +114,7 @@ function renderWishlistModal() {
                     <strong style="color: var(--primary); font-size: 0.95rem;">${priceDisplay}</strong>
                 </div>
                 <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <button type="button" onclick="openDetailsModal(${car.id})" class="card-btn" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; background: var(--border);">Details</button>
                     <a href="https://wa.me/12272670270?text=${encodedMsg}" target="_blank" class="card-btn" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">Inquire</a>
                     <button type="button" onclick="toggleWishlist('${escapeHTML(safeTitle)}')" style="background: none; border: 1px solid var(--border); border-radius: 4px; padding: 0.4rem 0.6rem; color: #e63946; cursor: pointer; font-size: 0.8rem;" title="Remove from wishlist">
                         Remove
@@ -222,12 +224,18 @@ function renderInventory() {
             const isWishlisted = wishlist.includes(car.title);
             const safeTitle = car.title ? car.title.replace(/\\/g, "\\\\").replace(/'/g, "\\'") : "";
             const encodedMsg = encodeURIComponent(`Hi, I want to buy the ${car.title || ''} ($${car.price ? Number(car.price).toLocaleString() : 'N/A'}) on DRIVE-NATION GLOBAL.`);
-            const imageSrc = escapeHTML(car.image || '/static/placeholder.jpg');
+            
+            const images = Array.isArray(car.images) && car.images.length > 0 ? car.images : [car.image || '/static/placeholder.jpg'];
+            const imageSrc = escapeHTML(images[0]);
+            
+            const stockBadge = (car.stock !== undefined && car.stock <= 0)
+                ? `<span class="badge out-stock" style="background:#e63946; top: 10px; left: 10px;">Sold Out</span>`
+                : `<span class="badge">For Sale ${car.stock ? `(${car.stock})` : ''}</span>`;
 
             grid.innerHTML += `
-                <div class="card">
-                    <div class="card-image" style="background-image: url('${imageSrc}')" onclick="openLightbox('${imageSrc}')" title="Click to enlarge image">
-                        <span class="badge">For Sale</span>
+                <div class="card" onclick="openDetailsModal(${car.id})">
+                    <div class="card-image" style="background-image: url('${imageSrc}')">
+                        ${stockBadge}
                         <button type="button" class="wishlist-toggle-btn ${isWishlisted ? 'active' : ''}" onclick="event.stopPropagation(); toggleWishlist('${escapeHTML(safeTitle)}');" title="${isWishlisted ? 'Remove from Wishlist' : 'Save to Wishlist'}" style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.6); border: none; border-radius: 50%; width: 34px; height: 34px; cursor: pointer; color: ${isWishlisted ? '#e63946' : '#fff'}; display: flex; align-items: center; justify-content: center; z-index: 2;">
                             <svg viewBox="0 0 24 24" width="18" height="18">
                                 <path fill="currentColor" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
@@ -236,13 +244,13 @@ function renderInventory() {
                         <button type="button" class="compare-toggle-btn ${isComparing ? 'active' : ''}" onclick="event.stopPropagation(); toggleCompare('${escapeHTML(safeTitle)}');">
                             ${isComparing ? 'Selected for Compare' : '+ Compare'}
                         </button>
-                        <div class="zoom-icon">Click to Enlarge</div>
+                        <div class="zoom-icon">Click for Details</div>
                     </div>
                     <div class="card-body">
                         <h3 class="card-title">${escapeHTML(car.title)}</h3>
                         <p class="card-specs">${car.year ? escapeHTML(car.year) : ''} &bull; ${car.mileage ? Number(car.mileage).toLocaleString() + ' mi' : ''} &bull; ${escapeHTML(car.specs)}</p>
                     </div>
-                    <div class="card-footer">
+                    <div class="card-footer" onclick="event.stopPropagation();">
                         <div>
                             <span style="font-size: 0.7rem; color: var(--text-muted); display:block;">PRICE</span>
                             <span class="price-value">$${car.price ? Number(car.price).toLocaleString() : 'N/A'}</span>
@@ -277,11 +285,13 @@ function renderInventory() {
             const isWishlisted = wishlist.includes(car.title);
             const safeTitle = car.title ? car.title.replace(/\\/g, "\\\\").replace(/'/g, "\\'") : "";
             const encodedMsg = encodeURIComponent(`Hi, I want to rent the ${car.title || ''} ($${car.dailyPrice || 0}/day) on DRIVE-NATION GLOBAL.`);
-            const imageSrc = escapeHTML(car.image || '/static/placeholder.jpg');
+            
+            const images = Array.isArray(car.images) && car.images.length > 0 ? car.images : [car.image || '/static/placeholder.jpg'];
+            const imageSrc = escapeHTML(images[0]);
 
             grid.innerHTML += `
-                <div class="card">
-                    <div class="card-image" style="background-image: url('${imageSrc}')" onclick="openLightbox('${imageSrc}')" title="Click to enlarge image">
+                <div class="card" onclick="openDetailsModal(${car.id})">
+                    <div class="card-image" style="background-image: url('${imageSrc}')">
                         <span class="badge">For Rent</span>
                         <button type="button" class="wishlist-toggle-btn ${isWishlisted ? 'active' : ''}" onclick="event.stopPropagation(); toggleWishlist('${escapeHTML(safeTitle)}');" title="${isWishlisted ? 'Remove from Wishlist' : 'Save to Wishlist'}" style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.6); border: none; border-radius: 50%; width: 34px; height: 34px; cursor: pointer; color: ${isWishlisted ? '#e63946' : '#fff'}; display: flex; align-items: center; justify-content: center; z-index: 2;">
                             <svg viewBox="0 0 24 24" width="18" height="18">
@@ -291,13 +301,13 @@ function renderInventory() {
                         <button type="button" class="compare-toggle-btn ${isComparing ? 'active' : ''}" onclick="event.stopPropagation(); toggleCompare('${escapeHTML(safeTitle)}');">
                             ${isComparing ? 'Selected for Compare' : '+ Compare'}
                         </button>
-                        <div class="zoom-icon">Click to Enlarge</div>
+                        <div class="zoom-icon">Click for Details</div>
                     </div>
                     <div class="card-body">
                         <h3 class="card-title">${escapeHTML(car.title)}</h3>
                         <p class="card-specs">${escapeHTML(car.category || 'Rental')} &bull; ${escapeHTML(car.specs)}</p>
                     </div>
-                    <div class="card-footer">
+                    <div class="card-footer" onclick="event.stopPropagation();">
                         <div>
                             <span style="font-size: 0.7rem; color: var(--text-muted); display:block;">RATE</span>
                             <span class="price-value">$${car.dailyPrice ? escapeHTML(car.dailyPrice) : '0'} <small style="font-size: 0.75rem;">/day</small></span>
@@ -308,6 +318,90 @@ function renderInventory() {
             `;
         });
     }
+}
+
+// Vehicle Details & Gallery Lightbox Modal
+function openDetailsModal(carId) {
+    const car = allVehicles.find(v => v.id === carId || v.id == carId);
+    if (!car) return;
+
+    const modal = document.getElementById("details-modal");
+    const titleEl = document.getElementById("modal-car-title");
+    const bodyEl = document.getElementById("details-modal-body");
+    if (!modal || !bodyEl) return;
+
+    if (titleEl) titleEl.textContent = car.title || "Vehicle Details";
+
+    const images = (Array.isArray(car.images) && car.images.length > 0)
+        ? car.images
+        : [car.image || '/static/placeholder.jpg'];
+
+    const isSale = car.type === 'sale';
+    const priceDisplay = isSale
+        ? `$${car.price ? Number(car.price).toLocaleString() : 'N/A'}`
+        : `$${car.dailyPrice ? escapeHTML(car.dailyPrice) : '0'}/day`;
+
+    const stockBadge = (car.stock !== undefined && car.stock <= 0)
+        ? `<span class="badge out-stock" style="background: #e63946; color: #fff; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.8rem;">Out of Stock</span>`
+        : `<span class="badge in-stock" style="background: #2a9d8f; color: #fff; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.8rem;">In Stock (${car.stock || 1})</span>`;
+
+    const encodedMsg = encodeURIComponent(
+        `Hi, I want to inquire about the ${car.title || ''} (${priceDisplay}) on DRIVE-NATION GLOBAL.`
+    );
+
+    let thumbsHTML = '';
+    if (images.length > 1) {
+        thumbsHTML = `<div class="gallery-thumbnails" style="display: flex; gap: 0.5rem; margin-top: 0.75rem; overflow-x: auto; padding-bottom: 0.5rem;">` +
+            images.map((img, idx) => `
+                <img src="${escapeHTML(img)}" alt="Thumbnail ${idx+1}" onclick="setMainImage('${escapeHTML(img)}')" style="width: 70px; height: 50px; object-fit: cover; border-radius: 4px; cursor: pointer; border: 2px solid var(--border);" class="gallery-thumb">
+            `).join('') +
+            `</div>`;
+    }
+
+    bodyEl.innerHTML = `
+        <div class="details-modal-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
+            <div class="details-gallery">
+                <img id="gallery-main-img" src="${escapeHTML(images[0])}" alt="${escapeHTML(car.title)}" style="width: 100%; max-height: 320px; object-fit: cover; border-radius: 8px; cursor: pointer;" onclick="openLightbox(this.src)">
+                ${thumbsHTML}
+            </div>
+            <div class="details-info" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <span class="badge ${isSale ? 'sale' : 'rent'}">${isSale ? 'For Sale' : 'For Rent'}</span>
+                    ${stockBadge}
+                </div>
+                <h3 style="margin: 0; font-size: 1.4rem;">${escapeHTML(car.title)}</h3>
+                <div style="font-size: 1.5rem; font-weight: bold; color: var(--primary);">${priceDisplay}</div>
+                
+                <div class="details-specs-list" style="border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 0.75rem 0; margin: 0.5rem 0; display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; font-size: 0.9rem;">
+                    ${isSale ? `<div><strong>Year:</strong> ${car.year || 'N/A'}</div>` : ''}
+                    ${isSale ? `<div><strong>Mileage:</strong> ${car.mileage ? Number(car.mileage).toLocaleString() + ' mi' : 'N/A'}</div>` : ''}
+                    ${!isSale ? `<div><strong>Category:</strong> ${escapeHTML(car.category || 'Rental')}</div>` : ''}
+                    <div><strong>Make:</strong> ${escapeHTML(car.make || 'N/A')}</div>
+                    <div><strong>Drivetrain:</strong> ${escapeHTML(car.drivetrain || 'N/A')}</div>
+                    <div><strong>Fuel Type:</strong> ${escapeHTML(car.fuelType || 'Gasoline')}</div>
+                </div>
+
+                <div>
+                    <strong>Specifications & Description:</strong>
+                    <p style="margin-top: 0.25rem; color: var(--text-muted); font-size: 0.9rem;">${escapeHTML(car.specs || 'No additional details available.')}</p>
+                </div>
+
+                <a href="https://wa.me/12272670270?text=${encodedMsg}" target="_blank" class="card-btn" style="text-align: center; margin-top: auto; padding: 0.75rem;">Inquire on WhatsApp</a>
+            </div>
+        </div>
+    `;
+
+    modal.classList.add("active");
+}
+
+function closeDetailsModal() {
+    const modal = document.getElementById("details-modal");
+    if (modal) modal.classList.remove("active");
+}
+
+function setMainImage(url) {
+    const mainImg = document.getElementById("gallery-main-img");
+    if (mainImg) mainImg.src = url;
 }
 
 function openLightbox(imageSrc) {
@@ -338,7 +432,12 @@ function closeLightbox(e) {
 }
 
 document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") closeLightbox();
+    if (e.key === "Escape") {
+        closeLightbox();
+        closeDetailsModal();
+        closeWishlistModal();
+        closeCompareModal();
+    }
 });
 
 function openAdminModal() { 
@@ -376,12 +475,18 @@ async function handleFormSubmit(e) {
     formData.append("type", type);
     formData.append("title", document.getElementById("input-title")?.value || "");
     formData.append("specs", document.getElementById("input-specs")?.value || "");
+    formData.append("stock", document.getElementById("input-stock")?.value || "1");
 
-    const imageInput = document.getElementById("input-image");
-    if (imageInput && imageInput.files && imageInput.files[0]) {
-        formData.append("image", imageInput.files[0]);
-    } else if (imageInput && imageInput.value) {
-        formData.append("image", imageInput.value);
+    // Support both single input and multiple files input
+    const multiImagesInput = document.getElementById("input-images");
+    const singleImageInput = document.getElementById("input-image");
+
+    if (multiImagesInput && multiImagesInput.files && multiImagesInput.files.length > 0) {
+        for (let i = 0; i < multiImagesInput.files.length; i++) {
+            formData.append("images", multiImagesInput.files[i]);
+        }
+    } else if (singleImageInput && singleImageInput.files && singleImageInput.files[0]) {
+        formData.append("image", singleImageInput.files[0]);
     }
 
     if (type === 'sale') {
@@ -394,7 +499,6 @@ async function handleFormSubmit(e) {
         formData.append("dailyPrice", document.getElementById("input-daily")?.value || '0');
     }
 
-    // Disable button and give immediate feedback to avoid double submissions
     if (submitBtn) {
         submitBtn.disabled = true;
         submitBtn.innerText = "Uploading...";
@@ -419,7 +523,6 @@ async function handleFormSubmit(e) {
         console.error("Error saving vehicle:", err);
         alert("Failed to save vehicle.");
     } finally {
-        // Restore button state
         if (submitBtn) {
             submitBtn.disabled = false;
             submitBtn.innerText = originalBtnText;
@@ -501,7 +604,8 @@ function renderCompareModal() {
 
     selectedVehicles.forEach(car => {
         const safeTitle = car.title ? car.title.replace(/\\/g, "\\\\").replace(/'/g, "\\'") : "";
-        const imageSrc = escapeHTML(car.image || '/static/placeholder.jpg');
+        const images = Array.isArray(car.images) && car.images.length > 0 ? car.images : [car.image || '/static/placeholder.jpg'];
+        const imageSrc = escapeHTML(images[0]);
         html += `
             <th>
                 <div class="compare-header-cell">
