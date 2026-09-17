@@ -1373,3 +1373,28 @@ footer {
     opacity: 1;
     border-color: #007bff;
 }
+@media (max-width: 576px) {
+    .modal-overlay {
+        padding: 0.5rem;
+    }
+
+    .modal-card {
+        max-width: 95vw;
+        max-height: 86vh;
+        padding: 1rem;
+        border-radius: 10px;
+    }
+
+    #gallery-main-img {
+        max-height: 210px;
+    }
+
+    .details-specs-list {
+        grid-template-columns: 1fr;
+        gap: 0.4rem;
+    }
+
+    .details-info h3 {
+        font-size: 1.15rem !important;
+    }
+}
